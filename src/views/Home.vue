@@ -115,7 +115,7 @@ const ionRouter = useIonRouter();
 const iframeKey = ref(0)
 
 const nodeEnv = ref(process.env.NODE_ENV)
-const serverPath = process.env.NODE_ENV == 'development' ? 'http://localhost:5000' : 'https://device.display24.ru'
+const serverPath = process.env.NODE_ENV == 'development' ? 'http://localhost:5000' : 'https://display24.ru'
 
 var settings = reactive({
   partnerId: null,
@@ -269,7 +269,7 @@ const loadData = async (val) => {
   settings.dataReady = false
 
   try {
-      const response = await fetch(serverPath + '/api/v1/device/' + val, {
+      const response = await fetch(serverPath + '/mobile-api/v1/device/' + val, {
       //const response = await fetch('/api/device?code=' + val, {  
           method: 'GET',
           headers: {
@@ -440,7 +440,7 @@ ion-title {
 .params-item {
   margin-bottom: 10px;
   color: white;
-  width: 30%;
+  width: 50%;
   padding: 10px;
   vertical-align: top;
 }
