@@ -111,17 +111,21 @@ import { IonContent, IonHeader, IonPage, IonModal, IonTitle, IonToolbar, IonButt
   IonFabList, IonFab, IonFabButton, IonIcon, IonInput, IonItem, IonImg, modalController, useIonRouter } from '@ionic/vue';
 import { add, save, reload, saveOutline, closeOutline, settingsOutline, checkmarkOutline, trashOutline } from 'ionicons/icons';
 
+import { initializeApp } from "firebase/app";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
+
 const ionRouter = useIonRouter();
 const iframeKey = ref(0)
 
 const nodeEnv = ref(process.env.NODE_ENV)
-const serverPath = process.env.NODE_ENV == 'development' ? 'http://localhost:5000' : 'https://display24.ru'
+const serverPath = process.env.NODE_ENV == 'development' ? 'http://localhost:5000' : 'https://dev116.ru'
 
 var settings = reactive({
   partnerId: null,
   partnerName: null,
   partnerLogo: null,
   
+  displayId: null,
   displayCode: null,
   displayCodeInput: null,
   displayName: null,
@@ -133,6 +137,65 @@ var settings = reactive({
   osVersion: null,
   dataReady: false,
 })
+
+//Firebase init
+const firebaseConfig = {    
+    apiKey: 'AIzaSyBfTrlk1mDUHw124QEIPVRvk8o8aW8wTpM',
+    projectId: 'display24-3c078',
+    messagingSenderId: '121461843745',
+    appId: '1:121461843745:android:d2996ed490c740b6a78060',
+};
+const app = initializeApp(firebaseConfig)
+const messaging = getMessaging(app)
+
+//onMessage
+onMessage(messaging, (payload) => {
+  console.log('Message received. ', payload);
+  
+});
+
+//requestPermission
+function requestPermission() {
+  console.log('Requesting permission...');
+  Notification.requestPermission().then((permission) => {
+    if (permission === 'granted') {
+      console.log('Notification permission granted.');
+    }
+  })
+}
+requestPermission()
+
+//sendRegistrationToServer
+const sendRegistrationToServer = async (token) => {
+  const displayId = settings.displayId
+  console.log("TOKEN: ", token)
+
+  const formData = new URLSearchParams();
+  formData.append('device_id', displayId);
+  formData.append('token', token);
+
+  try {
+    const response = await fetch(serverPath + '/api/v1/device/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString()
+    })
+
+   
+    if (!response.ok) {
+      throw new Error('Send Registration failed');
+    }
+    const data = await response.json();
+    console.log("API REG RESULT: ", data)
+    
+  } catch (e) {
+    settings.dataReady = false
+    return
+  }
+}
+// Firebase finish
 
 const displayCodeInput = ref('')
 const displayCodeBorder = ref('')
@@ -175,6 +238,11 @@ const settingsGo = () => {
   }, 1000)
 }
 
+const settingsLoad = () => {
+  const settingsLocalStorage = localStorage.getItem("settings", null)
+  settings = settingsLocalStorage ? JSON.parse(localStorage.getItem("settings"), null) : {}
+}
+
 const loadSettingsFail = (e) => {
     partnerName.value.innerText = '-'
     displayName.value.innerText = '-'
@@ -210,6 +278,7 @@ const settingsClear = () => {
   settings.partnerId = null
   settings.partnerName = null
   settings.partnerLogo = null
+  settings.displayId = null
   settings.displayCode = null
   settings.displayCodeInput = null
   settings.displayName = null
@@ -247,7 +316,7 @@ const showPanel = (event) => {
   }
 }
 
-const readSettings = () => {
+const settingsRead = () => {
   if (!settings.displayCode) {
     panel.value = true
   }
@@ -269,8 +338,7 @@ const loadData = async (val) => {
   settings.dataReady = false
 
   try {
-      const response = await fetch(serverPath + '/mobile-api/v1/device/' + val, {
-      //const response = await fetch('/api/device?code=' + val, {  
+      const response = await fetch(serverPath + '/api/v1/device/' + val, {
           method: 'GET',
           headers: {
               'Content-Type': 'application/json',
@@ -281,7 +349,7 @@ const loadData = async (val) => {
         throw new Error('Request failed');
       }
       data = await response.json();
-      console.log("Data: ", data)
+      //console.log("Data: ", data)
 
   } catch (e) {
       loadSettingsFail(e)
@@ -299,6 +367,7 @@ const loadData = async (val) => {
     settings.partnerId = settingsData.partner_id
     settings.partnerName = settingsData.partner_name
     settings.partnerLogo = settingsData.partner_logo && settingsData.partner_logo.filename ? settingsData.partner_logo.filename : null
+    settings.displayId = settingsData.display_id
     settings.displayCode = settingsData.display_code
     settings.displayName = settingsData.display_name
     settings.displayDescription = settingsData.display_description
@@ -326,7 +395,22 @@ const loadData = async (val) => {
 }
 
 onMounted(() => {
-  readSettings()
+  settingsLoad()
+  settingsRead()
+  
+  // Get Firebase Token
+  getToken(messaging, { vapidKey: 'BE166Z44WSUJE7JvuFObi-2UdDJqyDWt2IQkN7yQ9lfFoAQDRc2A-Qb4Ra8AjHPouPoP4IZZp_993E5fL5Bvehg' }).then((currentToken) => {
+    if (currentToken) {
+      sendRegistrationToServer(currentToken)
+      
+    } else {
+      // Show permission request UI
+      console.log('No registration token available. Request permission to generate one.');
+    }
+  }).catch((err) => {
+    console.log('An error occurred while retrieving token. ', err);
+  });
+
 })
 
 </script>

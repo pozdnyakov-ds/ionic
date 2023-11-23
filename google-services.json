@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "121461843745",
+    "project_id": "display24-3c078",
+    "storage_bucket": "display24-3c078.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:121461843745:android:d2996ed490c740b6a78060",
+        "android_client_info": {
+          "package_name": "com.display24"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDARVxaxx_D1amT4uOzlT-jqsDubiKofyQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
